@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>এগ্রো এআই — স্মার্ট কৃষি সহকারী</title>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ===== রং ও ডিজাইন: এখানে পরিবর্তন করুন ===== */
+:root{
+  --g:#1e8e3e;          /* মূল সবুজ */
+  --gd:#0b4f26;         /* গাঢ় সবুজ */
+  --gl:#e6f4ea;         /* হালকা সবুজ */
+  --bg:#ffffff; --surface:#f0f4f0; --line:#e1e8e1;
+  --text:#1b1f1c; --muted:#5f6b62; --danger:#b3261e;
+}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{font-family:'Hind Siliguri',sans-serif;background:var(--bg);color:var(--text)}
+button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit}
+button:focus-visible,textarea:focus-visible,input:focus-visible{outline:3px solid #f2b705;outline-offset:2px}
+svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.app{height:100%;max-width:860px;margin:auto;display:flex;flex-direction:column;position:relative}
+
+/* ---- উপরের বার ---- */
+.top{display:flex;align-items:center;gap:6px;padding:8px 10px;padding-top:calc(8px + env(safe-area-inset-top,0px))}
+.ib{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;color:var(--muted);flex:none}
+.ib:hover{background:var(--surface)}
+.brand{font-weight:700;font-size:1.2rem;color:var(--gd);flex:1}
+.status{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--muted);padding-right:6px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--g)} .dot.off{background:var(--danger)}
+.banner{display:none;background:#fff3cd;color:#5c4400;padding:8px 14px;font-size:.85rem}
+.banner.show{display:block}
+
+/* ---- সাইড মেনু ---- */
+#scrim{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;z-index:20}
+#scrim.show{display:block}
+#drawer{position:fixed;top:0;bottom:0;left:0;width:290px;max-width:84%;background:var(--bg);z-index:21;transform:translateX(-100%);transition:transform .22s;padding:14px 12px;padding-top:calc(14px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:4px}
+#drawer.show{transform:none}
+#drawer .nb{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:99px;font-size:1rem;text-align:left}
+#drawer .nb:hover,#drawer .nb.on{background:var(--gl);color:var(--gd)}
+#drawer h4{padding:14px 14px 4px;color:var(--muted);font-size:.8rem;font-weight:500}
+#drawer label{display:flex;gap:10px;padding:8px 14px;font-size:.92rem;align-items:center}
+@media (prefers-reduced-motion:reduce){#drawer{transition:none}}
+
+/* ---- পেজ ---- */
+.view{display:none;flex:1;min-height:0;flex-direction:column}
+.view.on{display:flex}
+#chat{flex:1;overflow-y:auto;padding:8px 16px 16px;display:flex;flex-direction:column;gap:18px}
+
+/* স্বাগত অংশ */
+.hero{margin:auto 0;padding:10px 0}
+.hero h1{font-size:2rem;line-height:1.25;font-weight:700;background:linear-gradient(90deg,var(--g),#0b6b8a);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{font-size:1.6rem;color:#b5beb7;font-weight:600;margin-top:2px}
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:22px}
+.cards button{background:var(--surface);border-radius:16px;padding:14px;text-align:left;min-height:104px;display:flex;flex-direction:column;justify-content:space-between;font-size:.95rem;line-height:1.4}
+.cards button:hover{background:var(--gl)}
+.cards span{font-size:1.4rem}
+@media(min-width:640px){.cards{grid-template-columns:repeat(4,1fr)}}
+
+/* মেসেজ */
+.u{align-self:flex-end;max-width:85%;background:var(--surface);padding:10px 16px;border-radius:20px 20px 4px 20px;line-height:1.65;word-wrap:break-word}
+.u img{max-width:100%;max-height:220px;border-radius:12px;display:block;margin-bottom:6px}
+.a{display:flex;gap:12px;align-items:flex-start;max-width:100%}
+.av{width:32px;height:32px;border-radius:50%;background:var(--gl);color:var(--g);display:grid;place-items:center;flex:none;margin-top:2px}
+.av svg{width:18px;height:18px}
+.ab{flex:1;min-width:0;line-height:1.75;font-size:1.02rem;word-wrap:break-word}
+.ab h3{font-size:1.08rem;color:var(--gd);margin:12px 0 2px}
+.ab p{margin:5px 0} .ab ul,.ab ol{padding-left:22px;margin:5px 0} .ab li{margin:2px 0}
+.ab a{color:var(--g)}
+.ab.err{color:var(--danger)}
+.acts{display:flex;gap:2px;margin-top:6px}
+.acts button{width:34px;height:34px;border-radius:50%;color:var(--muted);display:grid;place-items:center}
+.acts button:hover{background:var(--surface)} .acts svg{width:18px;height:18px}
+.src{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px}
+.src a{background:var(--surface);border-radius:99px;padding:4px 12px;font-size:.78rem;text-decoration:none;color:var(--gd);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#drawer{overflow-y:auto}
+#hist{max-height:32vh;overflow-y:auto}
+.hrow{display:flex;align-items:center;border-radius:99px}
+.hrow:hover{background:var(--gl)}
+.hrow .hb{flex:1;min-width:0;padding:9px 14px;text-align:left;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:99px;display:block}
+.hrow.on .hb{color:var(--gd);font-weight:600}
+.hrow .x{width:34px;height:34px;color:var(--muted);flex:none;border-radius:50%}
+.hrow .x:hover{color:var(--danger)}
+.hempty{padding:6px 14px;font-size:.85rem;color:var(--muted)}
+.u .acts{margin-top:2px;justify-content:flex-end}
+.u .acts button{width:30px;height:30px}
+.cur{display:inline-block;width:8px;height:1.05em;background:var(--g);border-radius:2px;margin-left:2px;vertical-align:text-bottom;animation:blink .8s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.cur{animation:none}}
+.typing span{display:inline-block;width:8px;height:8px;margin-right:4px;border-radius:50%;background:var(--g);animation:b 1s infinite}
+.typing span:nth-child(2){animation-delay:.15s}.typing span:nth-child(3){animation-delay:.3s}
+@keyframes b{0%,80%,100%{opacity:.25}40%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.typing span{animation:none}}
+
+/* ---- ইনপুট বক্স ---- */
+.composer{padding:6px 12px;padding-bottom:calc(8px + env(safe-area-inset-bottom,0px))}
+#preview{display:none;align-items:center;gap:8px;margin:0 6px 8px}
+#preview img{height:60px;border-radius:12px}
+#preview button{background:var(--surface);border-radius:99px;padding:5px 12px;font-size:.8rem}
+.pill{display:flex;align-items:flex-end;gap:2px;background:var(--surface);border-radius:28px;padding:6px 6px 6px 8px}
+textarea{flex:1;resize:none;border:0;background:none;font:inherit;font-size:1rem;padding:11px 6px;max-height:130px;outline:none}
+#send{background:var(--g);color:#fff} #send:hover{background:var(--gd)}
+#send:disabled{background:#b9cfbf;cursor:not-allowed}
+.note{font-size:.72rem;color:var(--muted);text-align:center;margin-top:6px}
+
+/* ---- আবহাওয়া ও বাজারদর পেজ ---- */
+.page{padding:6px 16px 20px;overflow-y:auto;flex:1}
+.page h2{font-size:1.4rem;color:var(--gd);margin:6px 0 12px}
+.sr{display:flex;gap:8px;margin-bottom:14px}
+.sr input{flex:1;border:0;background:var(--surface);border-radius:99px;padding:12px 18px;font:inherit}
+.btn{background:var(--g);color:#fff;border-radius:99px;padding:0 22px;height:46px;font-weight:600}
+.btn:hover{background:var(--gd)}
+.card{background:var(--surface);border-radius:20px;padding:16px;margin-bottom:12px;line-height:1.7}
+.big{font-size:2.6rem;font-weight:700;color:var(--gd);line-height:1.1}
+.small{font-size:.78rem;color:var(--muted);margin-top:8px}
+
+/* গোপনীয়তা নীতি */
+#priv{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;padding:16px;z-index:30}
+#priv.show{display:flex}
+#priv .box{background:#fff;border-radius:24px;max-width:540px;max-height:85vh;overflow:auto;padding:22px;line-height:1.75;font-size:.93rem}
+#priv h3{color:var(--gd);margin-bottom:6px}
+#priv .btn{margin-top:12px;height:42px}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- উপরের বার -->
+<div class="top">
+  <button class="ib" id="menuBtn" aria-label="মেনু"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  <div class="brand">এগ্রো এআই</div>
+  <div class="status"><span class="dot" id="dot"></span><span id="stxt">অনলাইন</span></div>
+  <button class="ib" id="newChat" aria-label="নতুন চ্যাট"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+<div class="banner" id="banner"></div>
+
+<!-- সাইড মেনু -->
+<div id="scrim"></div>
+<aside id="drawer">
+  <button class="nb on" data-view="chatV"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.5A8 8 0 1 1 21 12z"/></svg>চ্যাট</button>
+  <button class="nb" data-view="wxV"><svg viewBox="0 0 24 24"><path d="M7 18a4 4 0 0 1-.5-8A6 6 0 0 1 18 11a3.5 3.5 0 0 1-.5 7z"/></svg>আবহাওয়া</button>
+  <button class="nb" data-view="mkV"><svg viewBox="0 0 24 24"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg>বাজারদর</button>
+  <h4>আগের চ্যাট</h4><div id="hist"></div>
+  <h4>সেটিংস</h4>
+  <!-- ইন্টারনেট সার্চ চালু থাকলে উত্তরে সাম্প্রতিক তথ্য ও উৎস-লিংক আসে -->
+  <label><input type="checkbox" id="useSearch"> ইন্টারনেট থেকে তথ্য খুঁজুন</label>
+  <label><input type="checkbox" id="useTTS"> উত্তর পড়ে শোনান</label>
+  <button class="nb" id="clearChat"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>এই চ্যাট মুছুন</button>
+  <button class="nb" id="clearAll"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg>সব চ্যাট মুছুন</button>
+  <button class="nb" id="privLink"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg>গোপনীয়তা নীতি</button>
+</aside>
+
+<!-- ===== চ্যাট ===== -->
+<section class="view on" id="chatV">
+  <div id="chat" aria-live="polite"></div>
+  <div class="composer">
+    <div id="preview"><img id="pimg" alt="নির্বাচিত ছবি"><button id="rmImg">ছবি সরান</button></div>
+    <div class="pill">
+      <button class="ib" id="galBtn" aria-label="ছবি আপলোড"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-8 8"/></svg></button>
+      <button class="ib" id="camBtn" aria-label="ক্যামেরা"><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
+      <textarea id="input" rows="1" placeholder="আপনার ফসলের সমস্যা বা কৃষি বিষয়ক প্রশ্ন লিখুন..."></textarea>
+      <button class="ib" id="send" aria-label="পাঠান"><svg viewBox="0 0 24 24"><path d="M5 12l14-7-5 14-3-6z"/></svg></button>
+    </div>
+    <input type="file" id="fGal" accept="image/*" hidden>
+    <input type="file" id="fCam" accept="image/*" capture="environment" hidden>
+    <div class="note">এআই ভুল করতে পারে। এটি প্রাথমিক পরামর্শ; সিদ্ধান্তের আগে স্থানীয় কৃষি কর্মকর্তার সাথে কথা বলুন।</div>
+  </div>
+</section>
+
+<!-- ===== আবহাওয়া ===== -->
+<section class="view" id="wxV"><div class="page">
+  <h2>আবহাওয়া</h2>
+  <div class="sr"><input id="city" placeholder="এলাকার নাম (যেমন: Rajshahi)"><button class="btn" id="wxGo">খুঁজুন</button><button class="btn" id="wxLoc" style="background:var(--gd)" aria-label="আমার অবস্থান">📍</button></div>
+  <div id="wxOut"></div>
+</div></section>
+
+<!-- ===== বাজারদর ===== -->
+<section class="view" id="mkV"><div class="page">
+  <h2>কৃষিপণ্যের বাজারদর</h2>
+  <div class="sr"><input id="mkQ" value="ধান, চাল, আলু, পেঁয়াজ, টমেটো, মরিচ"><button class="btn" id="mkGo">দেখুন</button></div>
+  <div id="mkOut"></div>
+</div></section>
+
+</div>
+
+<div id="priv"><div class="box">
+  <h3>গোপনীয়তা নীতি</h3>
+  <p>আপনার প্রশ্ন ও (আপনি বেছে নিলে) ছবি শুধু উত্তর তৈরির জন্য Google Gemini API-তে পাঠানো হয়। আবহাওয়ার জন্য এলাকার নাম Open-Meteo-তে যায়। আমরা নাম, ফোন নম্বর বা লোকেশন সংগ্রহ করি না। ক্যামেরা ও গ্যালারি শুধু আপনি বাটনে চাপলেই ব্যবহার হয়। চ্যাট সার্ভারে জমা থাকে না; পেজ বন্ধ করলে মুছে যায়।</p>
+  <p>এআই-এর উত্তর ভুল হতে পারে। কীটনাশক ব্যবহারের আগে লেবেল পড়ুন ও কৃষি কর্মকর্তার পরামর্শ নিন।</p>
+  <button class="btn" id="privClose">বন্ধ করুন</button>
+</div></div>
+
+<script>
+/* =====================================================================
+   ১. Gemini API কনফিগারেশন — এখানে পরিবর্তন করুন
+   ===================================================================== */
+
+// ⚠️ সতর্কতা: এই Key পেজের সোর্সে খোলা আছে; যে কেউ দেখে ব্যবহার করতে পারে।
+// শুধু নিজের পরীক্ষার জন্য রাখুন। পাবলিক/Play Store-এ দেওয়ার আগে অবশ্যই BACKEND_URL ব্যবহার করুন।
+const GEMINI_API_KEY = "AQ.Ab8RN6KKUuEGQrzTKuKJqpUFLhx2hlgcL2ZupXUAbYoYjJgWAA";
+
+// মডেল পরিবর্তন করতে শুধু এই নাম বদলান (ছবি বোঝে এমন মডেল হতে হবে)
+const GEMINI_MODEL = "gemini-flash-latest";
+
+// নিরাপদ ব্যাকএন্ডের URL। এখানে দিলে Key আর ব্রাউজার থেকে যাবে না।
+// ব্যাকএন্ড { model, body } নেবে, Gemini-তে পাঠাবে এবং Gemini-র উত্তর হুবহু ফেরত দেবে।
+const BACKEND_URL = "";
+
+// বাজারদরের নিজস্ব API (ঐচ্ছিক): দিলে Gemini-র সার্চ ব্যবহার না করে সরাসরি এখান থেকে দর আনবে।
+// প্রত্যাশিত JSON: { "date":"2026-10-25", "source":"উৎসের নাম",
+//   "items":[{"name":"আলু","market":"ঢাকা","price":35,"unit":"কেজি"}] }
+const MARKET_API_URL = "";
+// বাজারদর খোঁজার মডেল (খালি রাখলে GEMINI_MODEL ব্যবহার হবে)। কোটার সমস্যা হলে অন্য মডেল দিয়ে দেখুন।
+const MARKET_MODEL = "";
+
+/* =====================================================================
+   ২. এআই-এর সিস্টেম ইনস্ট্রাকশন — এআই-এর আচরণ বদলাতে এই লেখা সম্পাদনা করুন
+   ===================================================================== */
+const SYSTEM_INSTRUCTION = `তুমি Agro AI, বাংলাদেশের কৃষকদের জন্য তৈরি একজন দায়িত্বশীল, অভিজ্ঞ কৃষি সহকারী। তুমি বাংলাদেশের কৃষি, ধান, গম, ভুট্টা, সবজি, ফল, মসলা, সার ব্যবস্থাপনা, সেচ, মাটির স্বাস্থ্য, ফসলের রোগবালাই এবং পোকামাকড় সম্পর্কে কৃষকদের সহজ বাংলায় সহায়তা করবে।
+
+তোমার উত্তর হবে সহজবোধ্য, বাস্তবসম্মত, নির্ভরযোগ্য এবং বাংলাদেশের কৃষি পরিস্থিতির উপযোগী।
+
+কৃষকের প্রশ্নের উত্তর দেওয়ার সময়:
+১. প্রথমে কৃষকের সমস্যাটি বুঝবে।
+২. রোগ বা সমস্যার সম্ভাব্য কারণ ব্যাখ্যা করবে।
+৩. প্রয়োজন হলে আক্রান্ত ফসল, বয়স, জমির অবস্থা, এলাকার নাম, লক্ষণ এবং ছবি সম্পর্কে প্রশ্ন করবে।
+৪. সম্ভাব্য সমাধান ধাপে ধাপে বুঝিয়ে দেবে।
+৫. প্রতিরোধমূলক ব্যবস্থা জানাবে।
+৬. সার বা কীটনাশকের পরামর্শ দেওয়ার আগে ফসল, রোগ, মাত্রা এবং ব্যবহারের নিরাপত্তা বিবেচনা করবে।
+৭. কোনো রোগ নিশ্চিতভাবে শনাক্ত করা সম্ভব না হলে অনুমানকে নিশ্চিত রোগ হিসেবে উপস্থাপন করবে না।
+৮. বাংলাদেশের সরকারি কৃষি তথ্য, কৃষি সম্প্রসারণ অধিদপ্তর, কৃষি তথ্য সার্ভিস এবং নির্ভরযোগ্য বৈজ্ঞানিক উৎসকে অগ্রাধিকার দেবে।
+৯. তথ্যের নির্ভরযোগ্যতা নিশ্চিত না হলে তা স্পষ্টভাবে জানাবে।
+১০. কৃষককে প্রয়োজনে স্থানীয় কৃষি কর্মকর্তা বা কৃষি সম্প্রসারণ অধিদপ্তরের পরামর্শ নিতে বলবে।
+১১. কীটনাশক ব্যবহারের ক্ষেত্রে লেবেলের নির্দেশনা, অনুমোদিত ব্যবহার, সুরক্ষাসামগ্রী, ফসল সংগ্রহের আগে অপেক্ষার সময় এবং পরিবেশগত নিরাপত্তা উল্লেখ করবে।
+১২. কোনো কীটনাশক বা সার সম্পর্কে ভুল বা বানানো মাত্রা দেবে না।
+১৩. কৃষকের প্রশ্নের বাইরে অপ্রয়োজনীয় দীর্ঘ আলোচনা করবে না।
+১৪. সব উত্তর সহজ, স্বাভাবিক ও প্রাঞ্জল বাংলায় দেবে।
+
+তুমি নিজেকে বাস্তব সরকারি কৃষি কর্মকর্তা হিসেবে পরিচয় দেবে না। তুমি একটি AI কৃষি সহকারী। ছবি দেখলে বলবে এটি প্রাথমিক ধারণা, নিশ্চিত রোগ নির্ণয় নয়; ছবি অস্পষ্ট হলে আরও পরিষ্কার ছবি চাইবে। বাজারদর বা আবহাওয়ার তথ্য নিশ্চিত না হলে বানিয়ে বলবে না।`;
+
+/* =====================================================================
+   ৩. স্বাগত পেজের সাজেশন কার্ড — যোগ/বাদ দিতে এই তালিকা বদলান
+   ===================================================================== */
+const SUGGESTIONS = [
+  { icon:"🌾", text:"ধানের রোগ ও প্রতিকার" },
+  { icon:"🍅", text:"টমেটোর পাতা হলুদ হচ্ছে কেন?" },
+  { icon:"🐛", text:"ফসলের পোকামাকড় দমন" },
+  { icon:"🌱", text:"সার প্রয়োগের সঠিক নিয়ম" }
+];
+
+/* ================= হেল্পার ================= */
+const $ = id => document.getElementById(id);
+const chat = $("chat"), input = $("input"), sendBtn = $("send");
+let history = [], pendingImg = null, busy = false;
+
+// নিরাপদ রেন্ডার: আগে সব HTML এস্কেপ, তারপর সীমিত Markdown (শিরোনাম, বুলেট, বোল্ড)
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function md(t){
+  let out = "", list = null;
+  const close = () => { if(list){ out += `</${list}>`; list = null; } };
+  const inl = s => s.replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/\*(.+?)\*/g,"<i>$1</i>");
+  for(const l of esc(t).split("\n")){
+    let m;
+    if((m = l.match(/^#{1,4}\s+(.*)/))){ close(); out += `<h3>${inl(m[1])}</h3>`; }
+    else if((m = l.match(/^\s*[-*•]\s+(.*)/))){ if(list!=="ul"){ close(); out+="<ul>"; list="ul"; } out += `<li>${inl(m[1])}</li>`; }
+    else if((m = l.match(/^\s*(\d+|[০-৯]+)[.)।]\s+(.*)/))){ if(list!=="ol"){ close(); out+="<ol>"; list="ol"; } out += `<li>${inl(m[2])}</li>`; }
+    else if(!l.trim()) close();
+    else { close(); out += `<p>${inl(l)}</p>`; }
+  }
+  close(); return out;
+}
+const scrollDown = () => { chat.scrollTop = chat.scrollHeight; };
+const banner = t => { $("banner").textContent = t; $("banner").classList.toggle("show", !!t); };
+const setStatus = (ok,t) => { $("dot").className = "dot"+(ok?"":" off"); $("stxt").textContent = t; };
+const ICON = {
+  edit:'<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/></svg>',
+  stop:'<svg viewBox="0 0 24 24" style="fill:currentColor;stroke:none"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg>',
+  send:'<svg viewBox="0 0 24 24"><path d="M5 12l14-7-5 14-3-6z"/></svg>',
+  leaf:'<svg viewBox="0 0 24 24"><path d="M12 21V11M12 14c-4 0-6-2.5-6-6 4 0 6 2.5 6 6zM12 11c0-3.5 2-6 6-6 0 3.5-2 6-6 6z"/></svg>',
+  copy:'<svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg>',
+  speak:'<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9zM17 9a4 4 0 0 1 0 6"/></svg>'
+};
+
+/* ================= স্বাগত পেজ ================= */
+function welcome(){
+  history = [];
+  chat.innerHTML = `<div class="hero"><h1>আসসালামু আলাইকুম</h1><p>আজ কোন ফসল নিয়ে সাহায্য করতে পারি?</p>
+    <div class="cards">${SUGGESTIONS.map((s,i)=>`<button data-i="${i}">${esc(s.text)}<span>${s.icon}</span></button>`).join("")}</div></div>`;
+}
+chat.addEventListener("click", e => {
+  const c = e.target.closest(".cards button");
+  if(c){ input.value = SUGGESTIONS[c.dataset.i].text; send(); return; }
+  const b = e.target.closest("button[data-a]"); if(!b) return;
+  if(b.dataset.a==="edit"){ editMsg(b.closest(".u")); return; }
+  const raw = b.closest(".a").dataset.raw || "";
+  if(b.dataset.a==="copy") navigator.clipboard.writeText(raw).then(()=>{ b.style.color="var(--g)"; setTimeout(()=>b.style.color="",1200); });
+  else speak(raw);
+});
+
+/* ================= মেনু ও পেজ বদল ================= */
+const drawer = $("drawer"), scrim = $("scrim");
+const toggleMenu = on => { drawer.classList.toggle("show",on); scrim.classList.toggle("show",on); };
+$("menuBtn").onclick = () => toggleMenu(true); scrim.onclick = () => toggleMenu(false);
+function showView(id){
+  document.querySelectorAll(".view").forEach(v => v.classList.toggle("on", v.id===id));
+  document.querySelectorAll("#drawer [data-view]").forEach(b => b.classList.toggle("on", b.dataset.view===id));
+  toggleMenu(false);
+}
+document.querySelectorAll("#drawer [data-view]").forEach(b => b.onclick = () => showView(b.dataset.view));
+
+/* ================= ছবি আপলোড (১০২৪px-এ ছোট করে পাঠানো হয়) ================= */
+function loadImage(file){
+  if(!file) return;
+  if(!file.type.startsWith("image/")){ banner("শুধু ছবি নির্বাচন করুন।"); return; }
+  const img = new Image(), url = URL.createObjectURL(file);
+  img.onload = () => {
+    const sc = Math.min(1, 1024/Math.max(img.width,img.height));
+    const c = document.createElement("canvas"); c.width = img.width*sc; c.height = img.height*sc;
+    c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+    const u = c.toDataURL("image/jpeg",.85);
+    const t = document.createElement("canvas"), k = Math.min(1, 240/Math.max(img.width,img.height));
+    t.width = img.width*k; t.height = img.height*k; t.getContext("2d").drawImage(img,0,0,t.width,t.height);
+    pendingImg = { mime:"image/jpeg", data:u.split(",")[1], url:u, thumb:t.toDataURL("image/jpeg",.6) };
+    $("pimg").src = u; $("preview").style.display = "flex"; banner(""); URL.revokeObjectURL(url);
+  };
+  img.onerror = () => banner("ছবিটি পড়া যায়নি, অন্য ছবি দিন।");
+  img.src = url;
+}
+$("galBtn").onclick = () => $("fGal").click();
+$("camBtn").onclick = () => $("fCam").click();
+$("fGal").onchange = e => { loadImage(e.target.files[0]); e.target.value=""; };
+$("fCam").onchange = e => { loadImage(e.target.files[0]); e.target.value=""; };
+const clearImg = () => { pendingImg = null; $("preview").style.display = "none"; };
+$("rmImg").onclick = clearImg;
+
+/* ================= Gemini কল (fetch + স্ট্রিমিং) =================
+   স্ট্রিমিং: উত্তর তৈরি হওয়ার সাথে সাথে টুকরো টুকরো আসে, তাই পুরো উত্তরের জন্য অপেক্ষা করতে হয় না।
+   onText(পুরো-লেখা-এ-পর্যন্ত) প্রতিবার নতুন অংশ এলে ডাকা হয়। */
+async function callGemini(contents, grounding, onText, opts={}){
+  if(!BACKEND_URL && !GEMINI_API_KEY) throw {kind:"key", msg:"কনফিগারেশন ত্রুটি: GEMINI_API_KEY বা BACKEND_URL সেট করা নেই।"};
+  if(!navigator.onLine) throw {kind:"net", msg:"ইন্টারনেট সংযোগ নেই। সংযোগ চালু করে আবার চেষ্টা করুন।"};
+  // গতি বাড়াতে: শুধু শেষ ১২টি মেসেজ পাঠানো হয় এবং পুরনো মেসেজের ছবি বাদ দেওয়া হয়
+  const last = contents.length-1;
+  const sent = contents.slice(-12).map((c,i,a)=> i===a.length-1 ? c : {role:c.role, parts:c.parts.filter(p=>!p.inline_data)});
+  const mk = think => {
+    const b = { systemInstruction:{ parts:[{ text:SYSTEM_INSTRUCTION }] }, contents:sent, generationConfig:{ temperature:0.4, maxOutputTokens:2048 } };
+    if(think) b.generationConfig.thinkingConfig = { thinkingBudget:0 };   // "ভাবার সময়" বন্ধ = দ্রুত উত্তর
+    if(grounding) b.tools = [{ google_search:{} }];
+    return b;
+  };
+  let text = "", sources = [];
+  for(const think of [true,false]){            // মডেল thinkingConfig না নিলে ছাড়াই আবার চেষ্টা
+    const body = mk(think);
+    const url = BACKEND_URL || `https://generativelanguage.googleapis.com/v1beta/models/${opts.model||GEMINI_MODEL}:streamGenerateContent?alt=sse`;
+    const headers = { "Content-Type":"application/json" };
+    if(!BACKEND_URL) headers["x-goog-api-key"] = GEMINI_API_KEY;
+    let res;
+    try{ res = await fetch(url,{ method:"POST", signal:opts.signal, headers, body:JSON.stringify(BACKEND_URL?{model:GEMINI_MODEL,body}:body) }); }
+    catch(e){ if(e.name==="AbortError") throw {kind:"abort", text:""}; throw {kind:"net", msg:"নেটওয়ার্ক সমস্যা: সার্ভারে পৌঁছানো যায়নি।", detail:String(e)}; }
+    if(!res.ok){
+      let d={}; try{ d = await res.json(); }catch(e){}
+      const m = (d.error && d.error.message) || "";
+      if(res.status===400 && think && /think/i.test(m)) continue;
+      const detail = res.status+": "+m.slice(0,160);
+      if(res.status===401||res.status===403||(res.status===400&&/API key/i.test(m))) throw {kind:"key", msg:"API Key সঠিক নয় বা অনুমতি নেই। Key যাচাই করুন।", detail};
+      if(res.status===404) throw {kind:"model", msg:`মডেল "${GEMINI_MODEL}" পাওয়া যায়নি। GEMINI_MODEL পরিবর্তন করুন।`, detail};
+      if(res.status===429) throw {kind:"quota", msg:"অনেক বেশি অনুরোধ বা কোটা শেষ। কিছুক্ষণ পরে চেষ্টা করুন।", detail};
+      throw {kind:"api", msg:"এআই সেবায় সমস্যা হয়েছে। একটু পরে আবার চেষ্টা করুন।", detail};
+    }
+    const add = j => {                          // একটি Gemini JSON অংশ থেকে লেখা ও উৎস সংগ্রহ
+      const c = j.candidates && j.candidates[0]; if(!c) return;
+      if(c.content && c.content.parts) text += c.content.parts.map(p=>p.text||"").join("");
+      const g = c.groundingMetadata;
+      if(g && g.groundingChunks) g.groundingChunks.forEach(k=>{ if(k.web && !sources.some(x=>x.u===k.web.uri)) sources.push({t:k.web.title||k.web.uri,u:k.web.uri}); });
+      if(onText) onText(text);
+    };
+    try{
+      if(BACKEND_URL || !res.body){            // ব্যাকএন্ড বা স্ট্রিম না থাকলে একবারে পুরো উত্তর
+        const raw = await res.text();
+        try{ const j = JSON.parse(raw); (Array.isArray(j)?j:[j]).forEach(add); }
+        catch(e){ raw.split("\n").forEach(l=>{ if(l.startsWith("data:")) try{ add(JSON.parse(l.slice(5))); }catch(_){} }); }
+      }else{
+        const rd = res.body.getReader(), dec = new TextDecoder(); let buf = "";
+        for(;;){
+          const {done,value} = await rd.read(); if(done) break;
+          buf += dec.decode(value,{stream:true});
+          let i; while((i = buf.indexOf("\n")) >= 0){
+            const line = buf.slice(0,i).trim(); buf = buf.slice(i+1);
+            if(line.startsWith("data:")) try{ add(JSON.parse(line.slice(5))); }catch(_){}
+          }
+        }
+      }
+    }catch(e){ if(e.name==="AbortError") throw {kind:"abort", text}; throw {kind:"net", msg:"উত্তর আসার সময় সংযোগ বিচ্ছিন্ন হয়েছে। আবার চেষ্টা করুন।", detail:String(e)}; }
+    break;
+  }
+  if(!text.trim()) throw {kind:"empty", msg:"এআই কোনো উত্তর দিতে পারেনি। প্রশ্নটি অন্যভাবে লিখে চেষ্টা করুন।"};
+  return { text:text.trim(), sources };
+}
+const srcHTML = s => s.length ? `<div class="src">${s.slice(0,6).map(x=>`<a href="${esc(x.u)}" target="_blank" rel="noopener noreferrer">${esc(x.t)}</a>`).join("")}</div>` : "";
+const errHTML = e => esc((e&&e.msg)||"অজানা ত্রুটি হয়েছে।") + (e&&e.detail?`<div class="small">বিস্তারিত: ${esc(e.detail)}</div>`:"");
+
+/* ===== টাইপিং অ্যানিমেশন =====
+   উত্তরের লেখা ধীরে ধীরে "টাইপ হচ্ছে" এমনভাবে দেখায়, শেষে ব্লিঙ্ক করা কার্সর থাকে।
+   গতি বদলাতে নিচের Math.ceil(back/10)-এর 10 কমান (দ্রুত) বা বাড়ান (ধীর)। */
+function typer(el){
+  let target = "", shown = 0, ended = false, raf = 0, done = null;
+  const calm = matchMedia("(prefers-reduced-motion:reduce)").matches;
+  const tick = () => {
+    const back = target.length - shown;
+    if(back > 0){
+      let n = calm ? target.length : shown + Math.max(1, Math.ceil(back/10));
+      // বাংলা যুক্তাক্ষর/কার চিহ্ন যেন মাঝখানে না ভাঙে
+      while(n < target.length && (/\p{M}/u.test(target[n]) || target[n-1]==="\u09CD")) n++;
+      shown = Math.min(n, target.length);
+      el.innerHTML = md(target.slice(0,shown)) + '<span class="cur"></span>'; scrollDown();
+    }
+    if(ended && shown >= target.length){ if(done) done(); return; }
+    raf = requestAnimationFrame(tick);
+  };
+  raf = requestAnimationFrame(tick);
+  return { set(t){ target = t; }, finish(){ ended = true; return new Promise(r => { done = r; }); }, cancel(){ cancelAnimationFrame(raf); } };
+}
+
+/* ================= মেসেজ পাঠানো / থামানো / এডিট ================= */
+let ctrl = null;   // চলমান উত্তর থামানোর কন্ট্রোলার
+const setBusy = on => {
+  busy = on; sendBtn.innerHTML = on ? ICON.stop : ICON.send;
+  sendBtn.setAttribute("aria-label", on ? "থামান" : "পাঠান");
+};
+const stopGen = () => { if(ctrl) ctrl.abort(); };
+const actsHTML = `<div class="acts"><button data-a="copy" aria-label="কপি">${ICON.copy}</button><button data-a="speak" aria-label="পড়ে শোনান">${ICON.speak}</button></div>`;
+
+// প্রশ্ন এডিট: ওই প্রশ্ন ও তার পরের সব মেসেজ মুছে প্রশ্নটি ইনপুটে ফিরিয়ে আনে
+function editMsg(u){
+  if(busy) return;
+  history.length = +u.dataset.h; conv.msgs.length = history.length;
+  while(u.nextSibling) u.nextSibling.remove();
+  input.value = u.dataset.q || ""; u.remove();
+  pendingImg = u._img || null;
+  if(pendingImg){ $("pimg").src = pendingImg.url; $("preview").style.display = "flex"; }
+  if(!chat.querySelector(".u")) welcome();
+  persist();
+  input.dispatchEvent(new Event("input")); input.focus();
+}
+
+async function send(){
+  const q = input.value.trim();
+  if(busy || (!q && !pendingImg)) return;
+  setBusy(true);
+  const hero = chat.querySelector(".hero"); if(hero) hero.remove();
+
+  const u = document.createElement("div"); u.className = "u";   // ব্যবহারকারী: ডানে
+  u.dataset.h = history.length; u.dataset.q = q; u._img = pendingImg;
+  u.innerHTML = (pendingImg?`<img src="${pendingImg.url}" alt="আপলোড করা ছবি">`:"") + (q?esc(q).replace(/\n/g,"<br>"):"ছবি পাঠানো হয়েছে") +
+    `<div class="acts"><button data-a="edit" aria-label="প্রশ্ন এডিট">${ICON.edit}</button></div>`;
+  chat.appendChild(u);
+  const parts = [];
+  if(pendingImg) parts.push({ inline_data:{ mime_type:pendingImg.mime, data:pendingImg.data } });
+  parts.push({ text: q || "এই ছবির ফসলে কোনো রোগ বা সমস্যার লক্ষণ আছে কি? প্রাথমিক ধারণা দিন।" });
+  history.push({ role:"user", parts });
+  conv.msgs.push({ role:"user", text:q, img:(pendingImg&&pendingImg.thumb)||"" });
+  input.value = ""; input.style.height = "auto"; clearImg();
+
+  const a = document.createElement("div"); a.className = "a";   // এআই: বামে
+  a.innerHTML = `<div class="av">${ICON.leaf}</div><div class="ab"><span class="typing"><span></span><span></span><span></span></span> এগ্রো এআই উত্তর তৈরি করছে...</div>`;
+  chat.appendChild(a); scrollDown(); setStatus(true,"উত্তর তৈরি হচ্ছে");
+  const ab = a.querySelector(".ab"), tp = typer(ab);
+  ctrl = new AbortController();
+  try{
+    const r = await callGemini(history, $("useSearch").checked, t => tp.set(t), { signal:ctrl.signal });
+    tp.set(r.text); await tp.finish();               // টাইপিং শেষ হওয়া পর্যন্ত অপেক্ষা
+    history.push({ role:"model", parts:[{ text:r.text }] });
+    conv.msgs.push({ role:"model", text:r.text, src:r.sources.slice(0,6) });
+    ab.innerHTML = md(r.text) + srcHTML(r.sources) + actsHTML;
+    a.dataset.raw = r.text;
+    if($("useTTS").checked) speak(r.text);
+    setStatus(true,"অনলাইন");
+  }catch(e){
+    tp.cancel();
+    if(e && e.kind==="abort"){                        // ব্যবহারকারী "থামান" চাপলে
+      if(e.text){ history.push({ role:"model", parts:[{ text:e.text }] }); conv.msgs.push({ role:"model", text:e.text }); a.dataset.raw = e.text;
+        ab.innerHTML = md(e.text) + `<div class="small">উত্তর থামানো হয়েছে।</div>` + actsHTML; }
+      else { history.pop(); conv.msgs.pop(); ab.innerHTML = `<div class="small">উত্তর থামানো হয়েছে। উপরের প্রশ্নটি এডিট করে আবার পাঠাতে পারেন।</div>`; }
+      setStatus(true,"অনলাইন");
+    }else{
+      history.pop(); conv.msgs.pop();                  // ব্যর্থ প্রশ্ন স্মৃতি থেকে বাদ
+      ab.className = "ab err"; ab.innerHTML = errHTML(e);
+      setStatus(false, e && e.kind==="net" ? "অফলাইন" : "ত্রুটি");
+    }
+  }
+  persist(); ctrl = null; setBusy(false);   // প্রতি উত্তরের পর চ্যাট সংরক্ষণ
+  scrollDown(); input.focus();
+}
+
+/* ================= কপি ও পড়ে শোনানো (Text-to-Speech) ================= */
+function speak(t){
+  if(!("speechSynthesis" in window)){ banner("এই ডিভাইসে পড়ে শোনানোর সুবিধা নেই।"); return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(t.replace(/[*#]/g,"")); u.lang = "bn-BD"; speechSynthesis.speak(u);
+}
+
+/* ================= আবহাওয়া (Open-Meteo, ফ্রি, Key লাগে না) =================
+   অন্য Weather API ব্যবহার করতে showWeather() ফাংশনের URL ও ফিল্ড বদলান */
+async function getJSON(url){
+  const r = await fetch(url); if(!r.ok) throw new Error("HTTP "+r.status);
+  return r.json();
+}
+async function showWeather(lat, lon, label){
+  const out = $("wxOut");
+  try{
+    const w = await getJSON(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=3`);
+    const cu = w.current, d = w.daily, rain = d.precipitation_probability_max[0] ?? 0;
+    // কৃষিকাজের সংক্ষিপ্ত পরামর্শ (সহজ নিয়মভিত্তিক); চাইলে শর্ত বদলান
+    const tip = rain>=60 ? "বৃষ্টির সম্ভাবনা বেশি: সার ও কীটনাশক স্প্রে পিছিয়ে দিন এবং জমির পানি নিষ্কাশনের ব্যবস্থা রাখুন।"
+              : cu.temperature_2m>=35 ? "খুব গরম: সেচ সকালে বা সন্ধ্যায় দিন।"
+              : "আবহাওয়া মোটামুটি অনুকূল: নিয়মিত কাজ ও স্প্রে করা যেতে পারে।";
+    out.innerHTML = `<div class="card"><b>${esc(label)}</b>
+      <div class="big">${Math.round(cu.temperature_2m)}°C</div>
+      <div>আর্দ্রতা ${cu.relative_humidity_2m}% · বৃষ্টির সম্ভাবনা ${rain}% · আজ ${Math.round(d.temperature_2m_min[0])}°–${Math.round(d.temperature_2m_max[0])}°C</div>
+      <p style="margin-top:8px"><b>কৃষি পরামর্শ:</b> ${tip}</p>
+      <div class="small">উৎস: Open-Meteo · আপডেট: ${esc(cu.time.replace("T"," "))}</div></div>`;
+  }catch(e){ out.innerHTML = `<div class="card" style="color:var(--danger)">আবহাওয়ার তথ্য আনা যায়নি। ইন্টারনেট সংযোগ দেখুন।<div class="small">বিস্তারিত: ${esc(e.message||e)}</div></div>`; }
+}
+$("wxGo").onclick = async () => {
+  const c = $("city").value.trim(), out = $("wxOut");
+  if(!c){ out.innerHTML = `<div class="card">এলাকার নাম লিখুন।</div>`; return; }
+  out.innerHTML = `<div class="card">খোঁজা হচ্ছে...</div>`;
+  try{
+    // বাংলা ও ইংরেজি দুই ভাষাতেই খোঁজে; বাংলাদেশের ফলাফল আগে দেখায়
+    let list = [];
+    for(const lang of ["bn","en"]){
+      const g = await getJSON(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(c)}&count=10&language=${lang}`);
+      if(g.results){ list = g.results; break; }
+    }
+    if(!list.length){ out.innerHTML = `<div class="card">এই নামে এলাকা পাওয়া যায়নি। জেলা বা উপজেলার নাম ইংরেজিতে লিখে দেখুন (যেমন: Rajshahi)।</div>`; return; }
+    const p = list.find(x=>x.country_code==="BD") || list[0];
+    showWeather(p.latitude, p.longitude, p.name + (p.admin1?", "+p.admin1:"") + (p.country?", "+p.country:""));
+  }catch(e){ out.innerHTML = `<div class="card" style="color:var(--danger)">এলাকা খোঁজা যায়নি। ইন্টারনেট সংযোগ দেখুন।<div class="small">বিস্তারিত: ${esc(e.message||e)}</div></div>`; }
+};
+// "আমার অবস্থান" বাটন: ব্যবহারকারী চাপলে তবেই লোকেশনের অনুমতি চাওয়া হয়
+$("wxLoc").onclick = () => {
+  if(!navigator.geolocation){ $("wxOut").innerHTML = `<div class="card">এই ডিভাইসে অবস্থান সুবিধা নেই। এলাকার নাম লিখুন।</div>`; return; }
+  $("wxOut").innerHTML = `<div class="card">অবস্থান খোঁজা হচ্ছে...</div>`;
+  navigator.geolocation.getCurrentPosition(
+    pos => showWeather(pos.coords.latitude, pos.coords.longitude, "আপনার বর্তমান অবস্থান"),
+    () => { $("wxOut").innerHTML = `<div class="card">অবস্থানের অনুমতি পাওয়া যায়নি। এলাকার নাম লিখে খুঁজুন।</div>`; },
+    { timeout:10000 });
+};
+
+/* ================= বাজারদর =================
+   ১) MARKET_API_URL দেওয়া থাকলে সেখান থেকে সরাসরি দর আসে (সবচেয়ে নির্ভরযোগ্য)।
+   ২) না থাকলে Gemini-র Google Search দিয়ে খোঁজা হয় (এই সুবিধার কোটা আপনার Key-তে না থাকলে ত্রুটি আসবে)।
+   কোনো অবস্থাতেই কাল্পনিক দাম দেখানো হয় না। */
+const GOV_LINKS = `<div class="src"><a href="https://dam.gov.bd" target="_blank" rel="noopener noreferrer">কৃষি বিপণন অধিদপ্তর (DAM)</a><a href="https://tcb.gov.bd" target="_blank" rel="noopener noreferrer">ট্রেডিং কর্পোরেশন (TCB)</a></div>`;
+$("mkGo").onclick = async () => {
+  const out = $("mkOut"), btn = $("mkGo"), items = $("mkQ").value.trim() || "ধান, চাল, আলু, পেঁয়াজ, টমেটো, মরিচ";
+  btn.disabled = true;
+  out.innerHTML = `<div class="card ab"><span class="typing"><span></span><span></span><span></span></span> বাজারদর খোঁজা হচ্ছে (কয়েক সেকেন্ড লাগতে পারে)...</div>`;
+  const box = out.firstChild;
+  if(MARKET_API_URL){                                   // নিজস্ব API
+    try{
+      const d = await getJSON(MARKET_API_URL); if(!d.items || !d.items.length) throw new Error("খালি তালিকা");
+      box.innerHTML = `<table style="width:100%;border-collapse:collapse"><tr><th align="left">পণ্য</th><th align="left">বাজার</th><th align="left">দাম</th></tr>` +
+        d.items.map(i=>`<tr><td>${esc(i.name)}</td><td>${esc(i.market||"-")}</td><td>${esc(i.price)} ৳/${esc(i.unit||"")}</td></tr>`).join("") +
+        `</table><div class="small">উৎস: ${esc(d.source||"অজানা")} · তারিখ: ${esc(d.date||"অজানা")}</div>`;
+    }catch(e){ box.className="card"; box.style.color="var(--danger)"; box.innerHTML = `সর্বশেষ তথ্য পাওয়া যায়নি।<div class="small">বিস্তারিত: ${esc(e.message||e)}</div>`; }
+    btn.disabled = false; return;
+  }
+  const tp = typer(box);
+  const prompt = `বাংলাদেশে আজকের (${new Date().toLocaleDateString("bn-BD")}) এই পণ্যগুলোর সর্বশেষ খুচরা/পাইকারি বাজারদর খুঁজে দাও: ${items}। TCB, কৃষি বিপণন অধিদপ্তর (DAM) বা নির্ভরযোগ্য সূত্র থেকে নাও। পণ্য, বাজার/অঞ্চল, দাম, একক ও তথ্যের তারিখসহ সংক্ষিপ্ত তালিকা দাও। নির্ভরযোগ্য তথ্য না পেলে বানিয়ে না বলে "সর্বশেষ তথ্য পাওয়া যায়নি" লেখো।`;
+  try{
+    const r = await callGemini([{ role:"user", parts:[{ text:prompt }] }], true, t => tp.set(t), { model: MARKET_MODEL || GEMINI_MODEL });
+    tp.set(r.text); await tp.finish();
+    box.innerHTML = md(r.text) + srcHTML(r.sources) + `<div class="small">এআই-এর ইন্টারনেট সার্চ থেকে সংগৃহীত; কেনাবেচার আগে স্থানীয় বাজারে যাচাই করুন।</div>`;
+  }catch(e){
+    tp.cancel(); box.className = "card"; box.style.color = "";
+    if(e && e.kind==="quota"){
+      box.innerHTML = `<p style="color:var(--danger)">সর্বশেষ বাজারদর আনা যায়নি: Google Search সুবিধার কোটা এই Key-তে নেই বা শেষ।</p>
+        <p class="small">সম্ভাব্য সমাধান: Google AI Studio-তে বিলিং চালু করুন, অথবা কোডে MARKET_MODEL-এ অন্য মডেল দিন, অথবা MARKET_API_URL-এ নিজস্ব API বসান। ততক্ষণ সরকারি সাইটে দেখুন:</p>${GOV_LINKS}<div class="small">বিস্তারিত: ${esc(e.detail||"")}</div>`;
+    }else{ box.style.color = "var(--danger)"; box.innerHTML = errHTML(e) + GOV_LINKS; }
+  }
+  btn.disabled = false;
+};
+
+/* =====================================================================
+   চ্যাট ইতিহাস (এই ডিভাইসের ব্রাউজারে localStorage-এ সংরক্ষিত)
+   - প্রতিটি উত্তরের পর স্বয়ংক্রিয়ভাবে সেভ হয়; অ্যাপ খুললে শেষ চ্যাট ফিরে আসে।
+   - সর্বোচ্চ ৩০টি চ্যাট রাখা হয় (সংখ্যা বদলাতে persist() ফাংশনে 30 পরিবর্তন করুন)।
+   - ছবি সংরক্ষণে শুধু ছোট থাম্বনেইল থাকে, মূল ছবি নয়।
+   - ডেটা শুধু এই ডিভাইসে থাকে; অন্য ডিভাইসে বা ব্রাউজার ডেটা মুছলে থাকবে না।
+   ===================================================================== */
+const LS_KEY = "agro_chats_v1";
+let store = { list:[], cur:null }, storeOK = true;
+const newConv = () => ({ id:Date.now().toString(36)+Math.random().toString(36).slice(2,5), title:"নতুন চ্যাট", t:Date.now(), msgs:[] });
+let conv = newConv();
+function loadStore(){
+  try{ const j = JSON.parse(localStorage.getItem(LS_KEY)||"null"); if(j && Array.isArray(j.list)) store = j; }
+  catch(e){ storeOK = false; }
+}
+function saveStore(){
+  for(let i=0;i<6;i++){
+    try{ localStorage.setItem(LS_KEY, JSON.stringify(store)); return true; }
+    catch(e){ if(store.list.length<=1){ storeOK = false; break; } store.list.pop(); }   // জায়গা কম হলে সবচেয়ে পুরনো চ্যাট বাদ
+  }
+  return false;
+}
+function persist(){
+  store.list = store.list.filter(c => c.id !== conv.id);
+  if(conv.msgs.length){
+    const f = conv.msgs.find(m => m.role==="user");
+    conv.title = (f && f.text ? f.text : "ছবি সম্পর্কে প্রশ্ন").slice(0,40); conv.t = Date.now();
+    store.list.unshift(conv); store.list = store.list.slice(0,30);
+  }
+  store.cur = conv.msgs.length ? conv.id : null;
+  saveStore(); renderHist();
+  if(!storeOK) banner("এই ব্রাউজারে চ্যাট সংরক্ষণ করা যাচ্ছে না (প্রাইভেট মোড বা সীমাবদ্ধতা)।");
+}
+function renderHist(){
+  const h = $("hist");
+  h.innerHTML = store.list.length ? store.list.map(c =>
+    `<div class="hrow${c.id===conv.id?" on":""}"><button class="hb" data-id="${esc(c.id)}">${esc(c.title)}</button><button class="x" data-del="${esc(c.id)}" aria-label="চ্যাট মুছুন">✕</button></div>`).join("")
+    : `<div class="hempty">কোনো সংরক্ষিত চ্যাট নেই</div>`;
+}
+$("hist").addEventListener("click", e => {
+  const d = e.target.closest("[data-del]"), o = e.target.closest("[data-id]");
+  if(d && !busy) deleteConv(d.dataset.del); else if(o) openConv(o.dataset.id);
+});
+// সংরক্ষিত মেসেজ থেকে চ্যাট স্ক্রিন আবার তৈরি
+function renderConv(){
+  history = conv.msgs.map(m => ({ role:m.role, parts:[{ text:m.text }] }));
+  if(!conv.msgs.length){ welcome(); return; }
+  chat.innerHTML = "";
+  conv.msgs.forEach((m,i) => {
+    const d = document.createElement("div");
+    if(m.role==="user"){
+      d.className = "u"; d.dataset.h = i; d.dataset.q = m.text;
+      d.innerHTML = (m.img?`<img src="${esc(m.img)}" alt="ছবি">`:"") + (m.text?esc(m.text).replace(/\n/g,"<br>"):"ছবি পাঠানো হয়েছে") +
+        `<div class="acts"><button data-a="edit" aria-label="প্রশ্ন এডিট">${ICON.edit}</button></div>`;
+    }else{
+      d.className = "a"; d.dataset.raw = m.text;
+      d.innerHTML = `<div class="av">${ICON.leaf}</div><div class="ab">${md(m.text)}${srcHTML(m.src||[])}${actsHTML}</div>`;
+    }
+    chat.appendChild(d);
+  });
+  scrollDown();
+}
+function openConv(id){
+  if(busy) return;
+  const c = store.list.find(x => x.id===id); if(!c) return;
+  persist(); conv = c; renderConv(); renderHist(); showView("chatV");
+}
+function newConversation(){
+  if(busy) return;
+  if("speechSynthesis" in window) speechSynthesis.cancel();
+  persist(); conv = newConv(); renderConv(); renderHist(); showView("chatV");
+}
+function deleteConv(id){
+  store.list = store.list.filter(c => c.id !== id);
+  if(conv.id === id){ conv = newConv(); renderConv(); }
+  saveStore(); renderHist();
+}
+function boot(){                                   // অ্যাপ চালু হলে শেষ চ্যাট ফিরিয়ে আনে
+  loadStore();
+  conv = store.list.find(c => c.id===store.cur) || newConv();
+  renderConv(); renderHist();
+  if(!storeOK) banner("এই ব্রাউজারে চ্যাট সংরক্ষণ করা যাচ্ছে না।");
+}
+
+/* ================= ইনপুট ও অন্যান্য বাটন ================= */
+sendBtn.onclick = () => busy ? stopGen() : send();
+// Enter = পাঠান, Shift+Enter = নতুন লাইন
+input.addEventListener("keydown", e => { if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); send(); } });
+input.addEventListener("input", () => { input.style.height="auto"; input.style.height = Math.min(input.scrollHeight,130)+"px"; });
+input.addEventListener("focus", () => setTimeout(()=>input.scrollIntoView({block:"nearest"}),300)); // কিবোর্ড খুললেও ইনপুট দেখা যাবে
+$("newChat").onclick = newConversation;
+$("clearChat").onclick = () => { if(!busy) deleteConv(conv.id); };
+$("clearAll").onclick = () => { if(!busy && confirm("সব সংরক্ষিত চ্যাট মুছে ফেলবেন?")){ store.list = []; conv = newConv(); renderConv(); saveStore(); renderHist(); toggleMenu(false); } };
+$("privLink").onclick = () => { toggleMenu(false); $("priv").classList.add("show"); };
+$("privClose").onclick = () => $("priv").classList.remove("show");
+function net(){ banner(navigator.onLine ? "" : "আপনি অফলাইন। ইন্টারনেট ছাড়া এআই ও আবহাওয়া কাজ করবে না।"); setStatus(navigator.onLine, navigator.onLine?"অনলাইন":"অফলাইন"); }
+addEventListener("online",net); addEventListener("offline",net);
+
+boot(); net();
+</script>
+</body>
+</html>
